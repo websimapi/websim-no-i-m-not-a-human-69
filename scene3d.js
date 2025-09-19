@@ -126,18 +126,7 @@ function animate() {
 
     prevTime = time;
     // Dolly towards door and auto-look when opening
-    if (dollyActive && controls) {
-        dollyT = Math.min(1, dollyT + delta * 0.8);
-        const playerObj = controls.getObject();
-        playerObj.position.lerpVectors(dollyStart, dollyEnd, THREE.MathUtils.smoothstep(dollyT, 0, 1));
-        // rotate camera toward look target (top of interior) while entering
-        if (lookTarget) {
-            tmpLookHelper.position.copy(camera.getWorldPosition(new THREE.Vector3()));
-            tmpLookHelper.lookAt(lookTarget);
-            camera.quaternion.slerp(tmpLookHelper.quaternion, 0.18);
-        }
-        if (dollyT >= 1) dollyActive = false;
-    } else if (doorOpening && lookTarget) {
+    if (doorOpening && lookTarget) {
         tmpLookHelper.position.copy(camera.getWorldPosition(new THREE.Vector3()));
         tmpLookHelper.lookAt(lookTarget);
         camera.quaternion.slerp(tmpLookHelper.quaternion, 0.12);
@@ -241,22 +230,12 @@ export function initScene3D() {
             doorOpening = true;
             // Begin edge fog as we commit to entering the barn
             if (vignette) vignette.fadeIn(900, 0.85);
-            // Setup dolly to just outside the doorway and look at interior
-            const playerObj = controls.getObject();
             const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
             const frontDir = new THREE.Vector3().setFromMatrixColumn(barnGroupRef.matrixWorld, 2).normalize(); // +Z of barn (outwards)
             const inwardDir = frontDir.clone().negate(); // into the barn
-            dollyStart = playerObj.position.clone();
-            dollyEnd = doorPos.clone().add(inwardDir.multiplyScalar(3.5)); dollyEnd.y = 1.7;
-            const ip = barnGroupRef.userData?.interiorPlane;
             // Look deep into the barn toward the back wall, slightly elevated
             lookTarget = doorPos.clone().add(inwardDir.clone().multiplyScalar(10));
             lookTarget.y = 3.6;
-            dollyT = 0; dollyActive = true;
-            // initial slight tilt up; continuous slerp will lock to top portion
-            const eul = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
-            eul.x = THREE.MathUtils.clamp(eul.x - 0.15, -Math.PI/2 + 0.05, Math.PI/2 - 0.05);
-            camera.quaternion.setFromEuler(eul);
         }
     };
     container.addEventListener('mousedown', onMouseDown);
