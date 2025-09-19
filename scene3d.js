@@ -16,6 +16,7 @@ let removeEventListeners = null;
 let interactRaycaster = null;
 let interactiveTargets = [];
 let doorOpening = false, doorOpened = false, doorAngle = 0;
+let doorHighlight = null, barnDoorMesh = null;
 
 const container = document.getElementById('scene-3d-container');
 const canvas = document.getElementById('scene-3d-canvas');
@@ -98,6 +99,16 @@ function animate() {
         if (Math.abs(doorAngle - target) < 0.02) { doorOpened = true; doorOpening = false; showBarnInteriorOverlay(); }
     }
 
+    // Door proximity highlight + pointer cursor
+    if (doorHighlight && barnDoorMesh && !doorOpening && !doorOpened) {
+        const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
+        const dist = controls.getObject().position.distanceTo(doorPos);
+        const active = dist < 3.0;
+        doorHighlight.visible = active;
+        if (active) { doorHighlight.material.opacity = 0.65 + Math.sin(time * 0.012) * 0.2; container.style.cursor = 'pointer'; }
+        else if (!isMobile) { container.style.cursor = ''; }
+    }
+
     prevTime = time;
     renderer.render(scene, camera);
 }
@@ -157,6 +168,7 @@ export function initScene3D() {
     scene.add(barnGroup);
     if (barnGroup.userData?.doorPivot) {
         interactiveTargets = [barnGroup.userData.doorPivot];
+        barnDoorMesh = barnGroup.userData.doorMesh;
     }
 
     // Initialize collision system
@@ -165,6 +177,16 @@ export function initScene3D() {
     // Foliage
     const foliageGroup = createFoliage();
     barnGroup.add(foliageGroup);
+
+    // Door proximity highlight
+    if (barnDoorMesh && barnGroup.userData?.doorPivot) {
+        const geom = new THREE.EdgesGeometry(barnDoorMesh.geometry);
+        const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+        doorHighlight = new THREE.LineSegments(geom, mat);
+        doorHighlight.position.copy(barnDoorMesh.position).add(new THREE.Vector3(0, 0, 0.002));
+        barnGroup.userData.doorPivot.add(doorHighlight);
+        doorHighlight.visible = false;
+    }
 
     // Event listeners
     removeEventListeners = setupControlEventListeners(
@@ -216,6 +238,7 @@ export function stopScene3D() {
     camera = null;
     if (container) {
         container.style.display = 'none';
+        container.style.cursor = '';
     }
 }
 
