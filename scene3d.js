@@ -1,5 +1,3 @@
-
-```javascript
 import * as THREE from 'three';
 import { createControls, setupControlEventListeners, getMovementState, isMobile } from './controls3d.js';
 import { createGround, createMoveIndicator, createBarn, createFoliage, createLighting } from './objects3d.js';

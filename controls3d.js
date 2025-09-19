@@ -1,5 +1,3 @@
-
-```javascript
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
