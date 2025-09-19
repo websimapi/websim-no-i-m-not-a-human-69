@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createControls, setupControlEventListeners, getMovementState, isMobile } from './controls3d.js';
+import { VignetteFX } from './vignette.js';
 import { createGround, createMoveIndicator, createBarn, createFoliage, createLighting } from './objects3d.js';
 import { initializeColliders, resolveCollision } from './collision3d.js';
 
@@ -17,7 +18,7 @@ let interactRaycaster = null;
 let interactiveTargets = [];
 let doorOpening = false, doorOpened = false, doorAngle = 0;
 let doorHighlight = null, barnDoorMesh = null;
-let dollyActive = false, dollyT = 0, dollyStart = null, dollyEnd = null, lookTarget = null, barnGroupRef = null;
+let dollyActive = false, dollyT = 0, dollyStart = null, dollyEnd = null, lookTarget = null, barnGroupRef = null, vignette = null;
 
 const container = document.getElementById('scene-3d-container');
 const canvas = document.getElementById('scene-3d-canvas');
@@ -132,6 +133,8 @@ function animate() {
         if (dollyT >= 1) dollyActive = false;
     }
     if (renderer && scene && camera) renderer.render(scene, camera);
+    // keep vignette canvas on top
+    if (vignette) vignette.render();
 }
 
 function onWindowResize() {
@@ -167,6 +170,8 @@ export function initScene3D() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    // Edge-fog vignette overlay (initialized but idle)
+    vignette = new VignetteFX(container);
 
     // Textures
     const textureLoader = new THREE.TextureLoader();
@@ -224,6 +229,8 @@ export function initScene3D() {
         const hits = interactRaycaster.intersectObjects(interactiveTargets, true);
         if (hits.length && camera.position.distanceTo(hits[0].point) < 3.0 && !doorOpening && !doorOpened) {
             doorOpening = true;
+            // Begin edge fog as we commit to entering the barn
+            if (vignette) vignette.fadeIn(900, 0.85);
             // Setup dolly to just outside the doorway and look at interior
             const playerObj = controls.getObject();
             const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
@@ -273,6 +280,7 @@ export function stopScene3D() {
         container.style.display = 'none';
         container.style.cursor = '';
     }
+    if (vignette) { vignette.stop(); vignette = null; }
 }
 
 // overlay view removed; door now reveals interior plane within the 3D scene
