@@ -17,6 +17,7 @@ let interactRaycaster = null;
 let interactiveTargets = [];
 let doorOpening = false, doorOpened = false, doorAngle = 0;
 let doorHighlight = null, barnDoorMesh = null;
+let dollyActive = false, dollyT = 0, dollyStart = null, dollyEnd = null, lookTarget = null, barnGroupRef = null;
 
 const container = document.getElementById('scene-3d-container');
 const canvas = document.getElementById('scene-3d-canvas');
@@ -100,6 +101,7 @@ function animate() {
         doorAngle = THREE.MathUtils.damp(doorAngle, target, 6, delta);
         const pivot = interactiveTargets[0];
         if (pivot) pivot.rotation.y = doorAngle;
+        if (barnDoorMesh && Math.abs(doorAngle) > 0.25) barnDoorMesh.visible = false; // clear view once partially open
         if (Math.abs(doorAngle - target) < 0.02) { doorOpened = true; doorOpening = false; }
     }
 
@@ -121,6 +123,17 @@ function animate() {
     }
 
     prevTime = time;
+    // Dolly towards door and auto-look when opening
+    if (dollyActive && controls) {
+        dollyT = Math.min(1, dollyT + delta * 0.8);
+        const playerObj = controls.getObject();
+        playerObj.position.lerpVectors(dollyStart, dollyEnd, THREE.MathUtils.smoothstep(dollyT, 0, 1));
+        const dir = lookTarget.clone().sub(playerObj.position).normalize();
+        const yaw = Math.atan2(dir.x, dir.z);
+        const targetQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0, 'YXZ'));
+        playerObj.quaternion.slerp(targetQ, THREE.MathUtils.clamp(delta * 3.0, 0, 1));
+        if (dollyT >= 1) dollyActive = false;
+    }
     if (renderer && scene && camera) renderer.render(scene, camera);
 }
 
@@ -177,9 +190,11 @@ export function initScene3D() {
     // Barn
     const barnGroup = createBarn(textureLoader);
     scene.add(barnGroup);
+    barnGroupRef = barnGroup;
     if (barnGroup.userData?.doorPivot) {
         interactiveTargets = [barnGroup.userData.doorPivot];
         barnDoorMesh = barnGroup.userData.doorMesh;
+        if (barnDoorMesh) barnDoorMesh.visible = true;
     }
 
     // Initialize collision system
@@ -212,6 +227,15 @@ export function initScene3D() {
         const hits = interactRaycaster.intersectObjects(interactiveTargets, true);
         if (hits.length && camera.position.distanceTo(hits[0].point) < 3.0 && !doorOpening && !doorOpened) {
             doorOpening = true;
+            // Setup dolly to just outside the doorway and look at interior
+            const playerObj = controls.getObject();
+            const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
+            const frontDir = new THREE.Vector3().setFromMatrixColumn(barnGroupRef.matrixWorld, 2).normalize(); // +Z of barn
+            dollyStart = playerObj.position.clone();
+            dollyEnd = doorPos.clone().add(frontDir.multiplyScalar(1.2)); dollyEnd.y = 1.7;
+            const ip = barnGroupRef.userData?.interiorPlane;
+            lookTarget = ip ? ip.getWorldPosition(new THREE.Vector3()) : doorPos.clone();
+            dollyT = 0; dollyActive = true;
         }
     };
     container.addEventListener('mousedown', onMouseDown);
