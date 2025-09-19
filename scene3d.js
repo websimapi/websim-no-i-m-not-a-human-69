@@ -128,10 +128,7 @@ function animate() {
         dollyT = Math.min(1, dollyT + delta * 0.8);
         const playerObj = controls.getObject();
         playerObj.position.lerpVectors(dollyStart, dollyEnd, THREE.MathUtils.smoothstep(dollyT, 0, 1));
-        const dir = lookTarget.clone().sub(playerObj.position).normalize();
-        const yaw = Math.atan2(dir.x, dir.z);
-        const targetQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0, 'YXZ'));
-        playerObj.quaternion.slerp(targetQ, THREE.MathUtils.clamp(delta * 3.0, 0, 1));
+        // keep current facing; do not auto-rotate the camera
         if (dollyT >= 1) dollyActive = false;
     }
     if (renderer && scene && camera) renderer.render(scene, camera);
