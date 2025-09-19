@@ -183,10 +183,10 @@ export function createBarn(textureLoader) {
 
         // Interior plane just inside the barn, aligned behind doorway
         const interiorPlane = new THREE.Mesh(
-            new THREE.PlaneGeometry(10.0, 6.0),
+            new THREE.PlaneGeometry(14.0, 8.0),
             new THREE.MeshBasicMaterial({ map: interiorTex, side: THREE.DoubleSide })
         );
-        interiorPlane.position.set(doorX, 2.4, BARN_DEPTH/2 - 6.0);
+        interiorPlane.position.set(doorX, 2.4, BARN_DEPTH/2 - 2.0);
         // face outwards (towards camera/front)
         // default Plane faces +Z; placing slightly inside works without rotation
         barnGroup.add(interiorPlane);
