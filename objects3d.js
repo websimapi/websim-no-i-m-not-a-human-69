@@ -149,7 +149,9 @@ export function createBarn(textureLoader) {
         door.castShadow = true; door.receiveShadow = false;
         doorPivot.add(door);
 
-        const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e1a18, roughness: 0.95 });
+        const frameMat = new THREE.MeshBasicMaterial({ 
+            color: 0x1e1a18, transparent: true, opacity: 0.0, depthWrite: false 
+        });
         const frame = new THREE.Mesh(new THREE.PlaneGeometry(1.32, 2.28), frameMat);
         frame.position.set(doorX, doorY, doorZ + 0.001); barnGroup.add(frame);
 

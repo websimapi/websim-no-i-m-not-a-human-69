@@ -101,7 +101,7 @@ function animate() {
         doorAngle = THREE.MathUtils.damp(doorAngle, target, 6, delta);
         const pivot = interactiveTargets[0];
         if (pivot) pivot.rotation.y = doorAngle;
-        if (barnDoorMesh && Math.abs(doorAngle) > 0.25) barnDoorMesh.visible = false; // clear view once partially open
+        // keep the physical door visible while it swings and after it opens
         if (Math.abs(doorAngle - target) < 0.02) { doorOpened = true; doorOpening = false; }
     }
 
