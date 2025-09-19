@@ -19,6 +19,7 @@ let interactiveTargets = [];
 let doorOpening = false, doorOpened = false, doorAngle = 0;
 let doorHighlight = null, barnDoorMesh = null;
 let dollyActive = false, dollyT = 0, dollyStart = null, dollyEnd = null, lookTarget = null, barnGroupRef = null, vignette = null;
+const tmpLookHelper = new THREE.Object3D();
 
 const container = document.getElementById('scene-3d-container');
 const canvas = document.getElementById('scene-3d-canvas');
@@ -129,8 +130,17 @@ function animate() {
         dollyT = Math.min(1, dollyT + delta * 0.8);
         const playerObj = controls.getObject();
         playerObj.position.lerpVectors(dollyStart, dollyEnd, THREE.MathUtils.smoothstep(dollyT, 0, 1));
-        // keep current facing; do not auto-rotate the camera
+        // rotate camera toward look target (top of interior) while entering
+        if (lookTarget) {
+            tmpLookHelper.position.copy(camera.getWorldPosition(new THREE.Vector3()));
+            tmpLookHelper.lookAt(lookTarget);
+            camera.quaternion.slerp(tmpLookHelper.quaternion, 0.18);
+        }
         if (dollyT >= 1) dollyActive = false;
+    } else if (doorOpening && lookTarget) {
+        tmpLookHelper.position.copy(camera.getWorldPosition(new THREE.Vector3()));
+        tmpLookHelper.lookAt(lookTarget);
+        camera.quaternion.slerp(tmpLookHelper.quaternion, 0.12);
     }
     if (renderer && scene && camera) renderer.render(scene, camera);
     // keep vignette canvas on top
@@ -239,11 +249,16 @@ export function initScene3D() {
             dollyStart = playerObj.position.clone();
             dollyEnd = doorPos.clone().add(inwardDir.multiplyScalar(3.5)); dollyEnd.y = 1.7;
             const ip = barnGroupRef.userData?.interiorPlane;
-            lookTarget = ip ? ip.getWorldPosition(new THREE.Vector3()) : doorPos.clone();
-            dollyT = 0; dollyActive = true;
-            // tilt camera up a bit so we look higher while entering
+            if (ip && ip.geometry?.parameters?.height) {
+                const topLocal = new THREE.Vector3(0, ip.geometry.parameters.height * 0.48, 0);
+                lookTarget = ip.localToWorld(topLocal);
+            } else {
+                lookTarget = doorPos.clone();
+            }
+             dollyT = 0; dollyActive = true;
+            // initial slight tilt up; continuous slerp will lock to top portion
             const eul = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
-            eul.x = THREE.MathUtils.clamp(eul.x - 0.25, -Math.PI/2 + 0.05, Math.PI/2 - 0.05);
+            eul.x = THREE.MathUtils.clamp(eul.x - 0.15, -Math.PI/2 + 0.05, Math.PI/2 - 0.05);
             camera.quaternion.setFromEuler(eul);
         }
     };
