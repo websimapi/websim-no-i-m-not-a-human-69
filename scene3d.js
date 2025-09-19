@@ -244,7 +244,7 @@ export function initScene3D() {
             // Begin edge fog as we commit to entering the barn
             if (vignette) vignette.fadeIn(900, 0.85);
             const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
-            const inwardDir = new THREE.Vector3(); barnDoorMesh.getWorldDirection(inwardDir).normalize();
+            const inwardDir = new THREE.Vector3(); barnDoorMesh.getWorldDirection(inwardDir).normalize().negate();
             const right = new THREE.Vector3().crossVectors(inwardDir, new THREE.Vector3(0,1,0)).normalize();
             // Look deep into the barn, slightly up and to the right
             lookTarget = doorPos.clone().add(inwardDir.clone().multiplyScalar(10)).add(right.multiplyScalar(1.2));
