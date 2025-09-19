@@ -22,7 +22,12 @@ export function initializeColliders(barnGroup) {
     };
     
     // Main barn perimeter walls
-    mk(gx, gz + halfD, BARN_WIDTH, t);     // front
+    // front wall split around real doorway opening
+    const doorX = -2.5, doorW = 1.25;
+    const leftFrontW  = (halfW + (doorX - doorW/2));
+    const rightFrontW = (halfW - (doorX + doorW/2));
+    if (leftFrontW > 0.01)  mk(gx - (halfW - leftFrontW/2), gz + halfD, leftFrontW, t);
+    if (rightFrontW > 0.01) mk(gx + (halfW - rightFrontW/2), gz + halfD, rightFrontW, t);
     mk(gx, gz - halfD, BARN_WIDTH, t);     // back
     mk(gx - halfW, gz, t, BARN_DEPTH);     // left
     mk(gx + halfW, gz, t, BARN_DEPTH);     // right

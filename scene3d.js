@@ -227,9 +227,10 @@ export function initScene3D() {
             // Setup dolly to just outside the doorway and look at interior
             const playerObj = controls.getObject();
             const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
-            const frontDir = new THREE.Vector3().setFromMatrixColumn(barnGroupRef.matrixWorld, 2).normalize(); // +Z of barn
+            const frontDir = new THREE.Vector3().setFromMatrixColumn(barnGroupRef.matrixWorld, 2).normalize(); // +Z of barn (outwards)
+            const inwardDir = frontDir.clone().negate(); // into the barn
             dollyStart = playerObj.position.clone();
-            dollyEnd = doorPos.clone().add(frontDir.multiplyScalar(1.2)); dollyEnd.y = 1.7;
+            dollyEnd = doorPos.clone().add(inwardDir.multiplyScalar(3.5)); dollyEnd.y = 1.7;
             const ip = barnGroupRef.userData?.interiorPlane;
             lookTarget = ip ? ip.getWorldPosition(new THREE.Vector3()) : doorPos.clone();
             dollyT = 0; dollyActive = true;
