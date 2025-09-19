@@ -17,10 +17,3 @@ document.addEventListener('DOMContentLoaded', async () => {
   const newGameBtn = Array.from(document.querySelectorAll('.menu button')).find(b=>b.textContent.trim()==='New Game');
   if(newGameBtn){ newGameBtn.addEventListener('click', async ()=>{ newGameBtn.disabled=true; stopKnocks(); playPrimaryKnock(); await startCutscene(); }); }
 });
-
-// Suppress benign lock exit promise rejections (e.g., pointer/OS locks)
-window.addEventListener('unhandledrejection', (e) => {
-  const r = e.reason;
-  const msg = (r && (r.message || r.toString?.())) || '';
-  if (typeof msg === 'string' && msg.includes('exited the lock')) e.preventDefault();
-});

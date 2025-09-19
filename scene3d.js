@@ -105,8 +105,15 @@ function animate() {
         const dist = controls.getObject().position.distanceTo(doorPos);
         const active = dist < 3.0;
         doorHighlight.visible = active;
-        if (active) { doorHighlight.material.opacity = 0.65 + Math.sin(time * 0.012) * 0.2; container.style.cursor = 'pointer'; }
-        else if (!isMobile) { container.style.cursor = ''; }
+        if (active) {
+            doorHighlight.material.opacity = 0.65 + Math.sin(time * 0.012) * 0.2;
+            container.style.cursor = 'pointer';
+            container.dataset.interact = '1';
+            if (!isMobile && typeof controls.unlock === 'function') controls.unlock(); // show cursor immediately
+        } else if (!isMobile) {
+            container.style.cursor = '';
+            container.dataset.interact = '';
+        }
     }
 
     prevTime = time;

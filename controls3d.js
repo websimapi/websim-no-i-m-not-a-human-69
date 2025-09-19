@@ -24,6 +24,9 @@ class DesktopControls {
     lock() {
         this.controls.lock();
     }
+    unlock() {
+        this.controls.unlock();
+    }
     addEventListener(event, callback) {
         this.controls.addEventListener(event, callback);
     }
@@ -188,7 +191,7 @@ export function setupControlEventListeners(container, controls, raycaster, camer
         };
     } else {
         const clickHandler = () => {
-            if (controls) controls.lock();
+            if (controls && container.dataset.interact !== '1') controls.lock();
         };
 
         container.addEventListener('click', clickHandler);
