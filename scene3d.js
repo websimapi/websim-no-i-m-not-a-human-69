@@ -35,6 +35,8 @@ function onTargetSet(target, hitPoint) {
 function animate() {
     animationFrameId = requestAnimationFrame(animate);
 
+    if (!renderer || !scene || !camera) { cancelAnimationFrame(animationFrameId); animationFrameId = null; return; }
+
     if (!controls || !controls.getObject) { cancelAnimationFrame(animationFrameId); animationFrameId = null; return; }
 
     const time = performance.now();
@@ -119,7 +121,7 @@ function animate() {
     }
 
     prevTime = time;
-    renderer.render(scene, camera);
+    if (renderer && scene && camera) renderer.render(scene, camera);
 }
 
 function onWindowResize() {
