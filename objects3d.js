@@ -48,15 +48,17 @@ export function createBarn(textureLoader) {
     const WALL_HEIGHT = 6;
     const ROOF_HEIGHT = 4;
 
-    // Main building walls
-    const mainBuilding = new THREE.Mesh(
-        new THREE.BoxGeometry(BARN_WIDTH, WALL_HEIGHT, BARN_DEPTH),
-        wallMaterial
-    );
-    mainBuilding.position.y = WALL_HEIGHT / 2;
-    mainBuilding.castShadow = true;
-    mainBuilding.receiveShadow = true;
-    barnGroup.add(mainBuilding);
+    // Build walls as planes so we can leave a real opening for the door
+    const sideMat = wallMaterial;
+    // Left wall
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(BARN_DEPTH, WALL_HEIGHT), sideMat);
+    leftWall.position.set(-BARN_WIDTH/2, WALL_HEIGHT/2, 0); leftWall.rotation.y = Math.PI/2; barnGroup.add(leftWall);
+    // Right wall
+    const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(BARN_DEPTH, WALL_HEIGHT), sideMat);
+    rightWall.position.set(BARN_WIDTH/2, WALL_HEIGHT/2, 0); rightWall.rotation.y = -Math.PI/2; barnGroup.add(rightWall);
+    // Back wall
+    const backWall = new THREE.Mesh(new THREE.PlaneGeometry(BARN_WIDTH, WALL_HEIGHT), sideMat);
+    backWall.position.set(0, WALL_HEIGHT/2, -BARN_DEPTH/2); backWall.rotation.y = Math.PI; barnGroup.add(backWall);
 
     // Main roof
     const roofShape = new THREE.Shape();
@@ -135,7 +137,7 @@ export function createBarn(textureLoader) {
     chimney3.position.set(-BARN_WIDTH/2 - EXT_WIDTH/2 + 1, EXT_HEIGHT + 1, -4);
     barnGroup.add(chimney3);
 
-    // Door (front face, slightly left) with small awning and see-through window placeholder
+    // Door (front face, slightly left) with small awning, real opening, and interior plane inside
     {
         const doorPivot = new THREE.Group();
         const doorX = -2.5, doorY = 1.1, doorZ = BARN_DEPTH / 2 + 0.02;
@@ -158,13 +160,34 @@ export function createBarn(textureLoader) {
         windowGlass.position.set(doorX, doorY + 0.55, doorZ + 0.002);
         barnGroup.add(windowGlass);
 
-        // Interior view visible through window
-        const insideView = new THREE.Mesh(
-            new THREE.PlaneGeometry(0.63, 0.40),
-            new THREE.MeshBasicMaterial({ map: interiorTex, transparent: true, opacity: 0.95 })
+        // Real opening in front wall: segment the facade around the door
+        const facadeZ = BARN_DEPTH / 2 + 0.001;
+        const leftW = (doorX - doorW/2) - (-BARN_WIDTH/2);
+        if (leftW > 0.01) {
+            const leftSeg = new THREE.Mesh(new THREE.PlaneGeometry(leftW, WALL_HEIGHT), sideMat);
+            leftSeg.position.set(-BARN_WIDTH/2 + leftW/2, WALL_HEIGHT/2, facadeZ); barnGroup.add(leftSeg);
+        }
+        const rightW = (BARN_WIDTH/2) - (doorX + doorW/2);
+        if (rightW > 0.01) {
+            const rightSeg = new THREE.Mesh(new THREE.PlaneGeometry(rightW, WALL_HEIGHT), sideMat);
+            rightSeg.position.set(doorX + doorW/2 + rightW/2, WALL_HEIGHT/2, facadeZ); barnGroup.add(rightSeg);
+        }
+        const topH = Math.max(0.01, WALL_HEIGHT - (doorY + doorH/2));
+        const topSeg = new THREE.Mesh(new THREE.PlaneGeometry(doorW, topH), sideMat);
+        topSeg.position.set(doorX, doorY + doorH/2 + topH/2, facadeZ); barnGroup.add(topSeg);
+        const bottomH = Math.max(0.01, (doorY - doorH/2));
+        const botSeg = new THREE.Mesh(new THREE.PlaneGeometry(doorW, bottomH), sideMat);
+        botSeg.position.set(doorX, bottomH/2, facadeZ); barnGroup.add(botSeg);
+
+        // Interior plane just inside the barn, aligned behind doorway
+        const interiorPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(6.0, 3.6),
+            new THREE.MeshBasicMaterial({ map: interiorTex })
         );
-        insideView.position.set(doorX, doorY + 0.55, BARN_DEPTH / 2 + 0.015);
-        barnGroup.add(insideView);
+        interiorPlane.position.set(doorX, 2.0, BARN_DEPTH/2 - 0.05);
+        // face outwards (towards camera/front)
+        // default Plane faces +Z; placing slightly inside works without rotation
+        barnGroup.add(interiorPlane);
 
         // Small angled awning above door
         const awning = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.6), roofMaterial);
@@ -175,7 +198,8 @@ export function createBarn(textureLoader) {
         barnGroup.add(doorPivot);
         barnGroup.userData.doorPivot = doorPivot;
         barnGroup.userData.doorMesh = door;
-        barnGroup.userData.windowInside = insideView;
+        // store reference if needed later
+        barnGroup.userData.interiorPlane = interiorPlane;
     }
 
     barnGroup.position.z = -15;

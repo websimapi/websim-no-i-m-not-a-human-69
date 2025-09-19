@@ -100,7 +100,7 @@ function animate() {
         doorAngle = THREE.MathUtils.damp(doorAngle, target, 6, delta);
         const pivot = interactiveTargets[0];
         if (pivot) pivot.rotation.y = doorAngle;
-        if (Math.abs(doorAngle - target) < 0.02) { doorOpened = true; doorOpening = false; showBarnInteriorOverlay(); }
+        if (Math.abs(doorAngle - target) < 0.02) { doorOpened = true; doorOpening = false; }
     }
 
     // Door proximity highlight + pointer cursor
@@ -253,13 +253,4 @@ export function stopScene3D() {
     }
 }
 
-function showBarnInteriorOverlay() {
-    const overlay = document.getElementById('barn-interior-overlay');
-    const btn = document.getElementById('barn-exit-btn');
-    if (!overlay) return;
-    overlay.style.display = 'flex';
-    overlay.setAttribute('aria-hidden', 'false');
-    stopScene3D();
-    const back = () => { overlay.style.display = 'none'; overlay.setAttribute('aria-hidden','true'); btn?.removeEventListener('click', back); initScene3D(); };
-    btn?.addEventListener('click', back, { once: true });
-}
+// overlay view removed; door now reveals interior plane within the 3D scene
