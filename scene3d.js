@@ -231,10 +231,9 @@ export function initScene3D() {
             // Begin edge fog as we commit to entering the barn
             if (vignette) vignette.fadeIn(900, 0.85);
             const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
-            const frontDir = new THREE.Vector3().setFromMatrixColumn(barnGroupRef.matrixWorld, 2).normalize(); // +Z of barn (outwards)
-            const inwardDir = frontDir.clone().negate(); // into the barn
+            const inwardDir = new THREE.Vector3(); barnDoorMesh.getWorldDirection(inwardDir).normalize(); // into the barn (-Z of door)
             // Look deep into the barn toward the back wall, slightly elevated
-            lookTarget = doorPos.clone().add(inwardDir.clone().multiplyScalar(10));
+            lookTarget = doorPos.clone().add(inwardDir.multiplyScalar(10));
             lookTarget.y = 3.6;
         }
     };
