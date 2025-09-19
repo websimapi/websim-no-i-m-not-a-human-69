@@ -20,6 +20,7 @@ let doorOpening = false, doorOpened = false, doorAngle = 0;
 let doorHighlight = null, barnDoorMesh = null;
 let dollyActive = false, dollyT = 0, dollyStart = null, dollyEnd = null, lookTarget = null, barnGroupRef = null, vignette = null;
 const tmpLookHelper = new THREE.Object3D();
+let cameraLocked = false;
 
 const container = document.getElementById('scene-3d-container');
 const canvas = document.getElementById('scene-3d-canvas');
@@ -73,23 +74,25 @@ function animate() {
         }
     } else if (!isMobile) {
         // Desktop controls
-        const movementState = getMovementState();
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
+        if (!dollyActive) {
+            const movementState = getMovementState();
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
 
-        direction.z = Number(movementState.moveForward) - Number(movementState.moveBackward);
-        direction.x = Number(movementState.moveRight) - Number(movementState.moveLeft);
-        direction.normalize();
+            direction.z = Number(movementState.moveForward) - Number(movementState.moveBackward);
+            direction.x = Number(movementState.moveRight) - Number(movementState.moveLeft);
+            direction.normalize();
 
-        if (movementState.moveForward || movementState.moveBackward) velocity.z -= direction.z * 40.0 * delta;
-        if (movementState.moveLeft || movementState.moveRight) velocity.x -= direction.x * 40.0 * delta;
+            if (movementState.moveForward || movementState.moveBackward) velocity.z -= direction.z * 40.0 * delta;
+            if (movementState.moveLeft || movementState.moveRight) velocity.x -= direction.x * 40.0 * delta;
 
-        const moveDeltaX = -velocity.x * delta, moveDeltaZ = -velocity.z * delta;
-        const forward = new THREE.Vector3(); controls.getObject().getWorldDirection(forward); forward.y = 0; forward.normalize();
-        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
-        const desired = forward.multiplyScalar(moveDeltaZ).add(right.multiplyScalar(moveDeltaX));
-        const resolved = resolveCollision(player.position, desired);
-        player.position.copy(resolved);
+            const moveDeltaX = -velocity.x * delta, moveDeltaZ = -velocity.z * delta;
+            const forward = new THREE.Vector3(); controls.getObject().getWorldDirection(forward); forward.y = 0; forward.normalize();
+            const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+            const desired = forward.multiplyScalar(moveDeltaZ).add(right.multiplyScalar(moveDeltaX));
+            const resolved = resolveCollision(player.position, desired);
+            player.position.copy(resolved);
+        }
     }
 
     // Keep player on ground
@@ -126,10 +129,20 @@ function animate() {
 
     prevTime = time;
     // Dolly towards door and auto-look when opening
-    if (doorOpening && lookTarget) {
+    if ((doorOpening || cameraLocked) && lookTarget) {
         tmpLookHelper.position.copy(camera.getWorldPosition(new THREE.Vector3()));
         tmpLookHelper.lookAt(lookTarget);
         camera.quaternion.slerp(tmpLookHelper.quaternion, 0.12);
+    }
+    if (dollyActive && dollyEnd) {
+        const player = controls.getObject();
+        const to = dollyEnd.clone().sub(player.position);
+        const dist = to.length();
+        const step = Math.min(2.4 * delta, dist);
+        const move = to.normalize().multiplyScalar(step);
+        const newPos = resolveCollision(player.position, move);
+        player.position.copy(newPos);
+        if (dist < 0.2) { dollyActive = false; setTimeout(()=>{ cameraLocked = false; if(vignette) vignette.fadeOut(800); }, 900); }
     }
     if (renderer && scene && camera) renderer.render(scene, camera);
     // keep vignette canvas on top
@@ -231,10 +244,16 @@ export function initScene3D() {
             // Begin edge fog as we commit to entering the barn
             if (vignette) vignette.fadeIn(900, 0.85);
             const doorPos = new THREE.Vector3(); barnDoorMesh.getWorldPosition(doorPos);
-            const inwardDir = new THREE.Vector3(); barnDoorMesh.getWorldDirection(inwardDir).normalize(); // into the barn (-Z of door)
-            // Look deep into the barn toward the back wall, slightly elevated
-            lookTarget = doorPos.clone().add(inwardDir.multiplyScalar(10));
-            lookTarget.y = 3.6;
+            const inwardDir = new THREE.Vector3(); barnDoorMesh.getWorldDirection(inwardDir).normalize();
+            const right = new THREE.Vector3().crossVectors(inwardDir, new THREE.Vector3(0,1,0)).normalize();
+            // Look deep into the barn, slightly up and to the right
+            lookTarget = doorPos.clone().add(inwardDir.clone().multiplyScalar(10)).add(right.multiplyScalar(1.2));
+            lookTarget.y = 3.8;
+            // Start a gentle auto-walk into the barn
+            const player = controls.getObject();
+            dollyStart = player.position.clone();
+            dollyEnd = player.position.clone().add(inwardDir.clone().multiplyScalar(5.5));
+            dollyActive = true; cameraLocked = true;
         }
     };
     container.addEventListener('mousedown', onMouseDown);
