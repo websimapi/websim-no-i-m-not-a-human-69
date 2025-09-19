@@ -241,6 +241,10 @@ export function initScene3D() {
             const ip = barnGroupRef.userData?.interiorPlane;
             lookTarget = ip ? ip.getWorldPosition(new THREE.Vector3()) : doorPos.clone();
             dollyT = 0; dollyActive = true;
+            // tilt camera up a bit so we look higher while entering
+            const eul = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+            eul.x = THREE.MathUtils.clamp(eul.x - 0.25, -Math.PI/2 + 0.05, Math.PI/2 - 0.05);
+            camera.quaternion.setFromEuler(eul);
         }
     };
     container.addEventListener('mousedown', onMouseDown);
