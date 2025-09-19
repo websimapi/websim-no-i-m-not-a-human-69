@@ -157,7 +157,7 @@ export function createBarn(textureLoader) {
 
         const windowGlass = new THREE.Mesh(
             new THREE.PlaneGeometry(0.65, 0.42),
-            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, depthWrite: false })
+            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0, depthWrite: false })
         );
         windowGlass.position.set(doorX, doorY + 0.55, doorZ + 0.002);
         barnGroup.add(windowGlass);
@@ -186,7 +186,7 @@ export function createBarn(textureLoader) {
             new THREE.PlaneGeometry(6.0, 3.6),
             new THREE.MeshBasicMaterial({ map: interiorTex, side: THREE.DoubleSide })
         );
-        interiorPlane.position.set(doorX, 2.0, BARN_DEPTH/2 - 0.05);
+        interiorPlane.position.set(doorX, 2.0, BARN_DEPTH/2 - 3.0);
         // face outwards (towards camera/front)
         // default Plane faces +Z; placing slightly inside works without rotation
         barnGroup.add(interiorPlane);
