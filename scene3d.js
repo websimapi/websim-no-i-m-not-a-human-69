@@ -35,6 +35,8 @@ function onTargetSet(target, hitPoint) {
 function animate() {
     animationFrameId = requestAnimationFrame(animate);
 
+    if (!controls || !controls.getObject) { cancelAnimationFrame(animationFrameId); animationFrameId = null; return; }
+
     const time = performance.now();
     const delta = (time - prevTime) / 1000;
     const player = controls.getObject();
