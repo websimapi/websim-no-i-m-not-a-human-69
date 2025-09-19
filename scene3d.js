@@ -249,13 +249,10 @@ export function initScene3D() {
             dollyStart = playerObj.position.clone();
             dollyEnd = doorPos.clone().add(inwardDir.multiplyScalar(3.5)); dollyEnd.y = 1.7;
             const ip = barnGroupRef.userData?.interiorPlane;
-            if (ip && ip.geometry?.parameters?.height) {
-                const topLocal = new THREE.Vector3(0, ip.geometry.parameters.height * 0.48, 0);
-                lookTarget = ip.localToWorld(topLocal);
-            } else {
-                lookTarget = doorPos.clone();
-            }
-             dollyT = 0; dollyActive = true;
+            // Look deep into the barn toward the back wall, slightly elevated
+            lookTarget = doorPos.clone().add(inwardDir.clone().multiplyScalar(10));
+            lookTarget.y = 3.6;
+            dollyT = 0; dollyActive = true;
             // initial slight tilt up; continuous slerp will lock to top portion
             const eul = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
             eul.x = THREE.MathUtils.clamp(eul.x - 0.15, -Math.PI/2 + 0.05, Math.PI/2 - 0.05);
